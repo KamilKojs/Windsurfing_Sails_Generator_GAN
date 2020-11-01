@@ -61,36 +61,17 @@ def generator_loss(fake_output):
 
 
 def load_data(path):
-    #list = [0]
-    #counter = 0
     np_array_of_images = 0
     for root, subdirs, files in os.walk(path):
-
-        '''for filename in files:
-            print("reading image " + str(counter))
-            file_path = os.path.join(root, filename)
-            img = cv2.imread(file_path)
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            img = (img - 127.5) / 127.5
-            list.append(img)
-            #array_of_images = np.append(array_of_images, img, axis=0)
-            counter += 1
-        '''
-        print("loading")
         np_array_of_images = np.array([np.array(cv2.cvtColor(cv2.imread(os.path.join(root, fname)), cv2.COLOR_BGR2RGB)) for fname in files])
-        print("loaded")
         np_array_of_images = (np_array_of_images - 127.5) / 127.5
 
     return np_array_of_images
 
 
 train_images = load_data("./data/Windsurfing_Sails_Photos_resized_512x512")
-print(train_images.shape)
-print(train_images[0])
 
 train_images = train_images.reshape(train_images.shape[0], 512, 512, 3).astype('float32')
-print("reshaped")
-print(train_images.shape)
 BUFFER_SIZE = 1084
 BATCH_SIZE = 50
 
