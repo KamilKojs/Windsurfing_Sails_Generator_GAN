@@ -10,39 +10,82 @@ from IPython import display
 
 def make_generator_model():
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Dense(7*7*256, use_bias=False, input_shape=(100,)))
+    model.add(tf.keras.layers.Dense(32 * 32 * 1024, use_bias=False, input_shape=(100,)))
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.LeakyReLU())
 
-    model.add(tf.keras.layers.Reshape((7, 7, 256)))
-    assert model.output_shape == (None, 7, 7, 256) # Note: None is the batch size
+    model.add(tf.keras.layers.Reshape((32, 32, 1024)))
+    assert model.output_shape == (None, 32, 32, 1024)  # Note: None is the batch size
 
-    model.add(tf.keras.layers.Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same', use_bias=False))
-    assert model.output_shape == (None, 7, 7, 128)
+    model.add(tf.keras.layers.Conv2DTranspose(512, (5, 5), strides=(1, 1), padding='same', use_bias=False))
+    assert model.output_shape == (None, 32, 32, 512)
+    model.add(tf.keras.layers.BatchNormalization())
+    model.add(tf.keras.layers.LeakyReLU())
+
+    model.add(tf.keras.layers.Conv2DTranspose(256, (5, 5), strides=(2, 2), padding='same', use_bias=False))
+    assert model.output_shape == (None, 64, 64, 256)
+    model.add(tf.keras.layers.BatchNormalization())
+    model.add(tf.keras.layers.LeakyReLU())
+
+    model.add(tf.keras.layers.Conv2DTranspose(128, (5, 5), strides=(2, 2), padding='same', use_bias=False))
+    assert model.output_shape == (None, 128, 128, 128)
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.LeakyReLU())
 
     model.add(tf.keras.layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
-    assert model.output_shape == (None, 14, 14, 64)
+    assert model.output_shape == (None, 256, 256, 64)
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.LeakyReLU())
 
-    model.add(tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
-    assert model.output_shape == (None, 28, 28, 1)
+    model.add(tf.keras.layers.Conv2DTranspose(3, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
+    assert model.output_shape == (None, 512, 512, 3)
+    print("generator model created")
 
     return model
 
 def make_discriminator_model():
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same',
-                                     input_shape=[28, 28, 1]))
+    model.add(tf.keras.layers.Conv2D(32, (5, 5), strides=(2, 2), padding='same',
+                                     input_shape=[512, 512, 3]))
     model.add(tf.keras.layers.LeakyReLU())
     model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
+
+    model.add(tf.keras.layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
 
     model.add(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
     model.add(tf.keras.layers.LeakyReLU())
     model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
 
+    model.add(tf.keras.layers.Conv2D(512, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
+    '''
+    model.add(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
+
+    model.add(tf.keras.layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
+
+    model.add(tf.keras.layers.Conv2D(256, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
+
+    model.add(tf.keras.layers.Conv2D(512, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+    model.add(tf.keras.layers.AveragePooling2D())
+'''
     model.add(tf.keras.layers.Flatten())
     model.add(tf.keras.layers.Dense(1))
 
@@ -85,7 +128,7 @@ generator = make_generator_model()
 noise = tf.random.normal([1, 100])
 generated_image = generator(noise, training=False)
 
-plt.imshow(generated_image[0, :, :, 0], cmap='gray')
+plt.imshow(generated_image[0, :, :, 0])
 plt.show()
 
 #classify the image using discriminator
@@ -131,6 +174,7 @@ def train_step(images):
 def train(dataset, epochs):
   for epoch in range(epochs):
     start = time.time()
+    print(start)
 
     for image_batch in dataset:
       train_step(image_batch)
@@ -155,11 +199,11 @@ def generate_and_save_images(model, epoch, test_input):
   # This is so all layers run in inference mode (batchnorm).
   predictions = model(test_input, training=False)
 
-  fig = plt.figure(figsize=(4,4))
+  fig = plt.figure(figsize=(2,2))
 
   for i in range(predictions.shape[0]):
-      plt.subplot(4, 4, i+1)
-      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5, cmap='gray')
+      plt.subplot(2, 2, i+1)
+      plt.imshow(predictions[i, :, :, 0] * 127.5 + 127.5)
       plt.axis('off')
 
   plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
